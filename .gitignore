@@ -1,0 +1,7 @@
+esphome/secrets.yaml
+esphome/.esphome/
+sounds/*.mp3
+sounds/dfplayer/
+__pycache__/
+*.bin
+.claude/

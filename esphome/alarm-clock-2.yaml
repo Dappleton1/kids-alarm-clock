@@ -1,0 +1,13 @@
+# Clock 2. Identical to clock 1 apart from the names and the key.
+substitutions:
+  name: alarm-clock-2
+  friendly_name: Alarm Clock 2
+  btn_inverted: "true"
+
+packages:
+  common: !include kids_alarm_common.yaml
+  tracks: !include tracks.yaml
+
+api:
+  encryption:
+    key: !secret api_key_clock_2

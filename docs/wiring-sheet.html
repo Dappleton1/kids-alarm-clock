@@ -1,0 +1,402 @@
+<meta charset="utf-8">
+<title>Kids Alarm Clock Wiring Sheet</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #e9e6df;
+    --paper: #ffffff;
+    --ink: #1c2230;
+    --ink-2: #4a5263;
+    --ink-3: #8a90a0;
+    --rule: #cfd3dc;
+    --rule-soft: #e6e8ee;
+    --band: #f3f4f7;
+    --v5: #c9302c;
+    --v33: #d9841a;
+    --gnd: #1c2230;
+    --i2c: #1f5fc4;
+    --sig: #7b3fbf;
+    --touch: #158a74;
+    --board: #1f6b5a;
+    --board-fill: #eaf3ef;
+    --mod-fill: #f7f7fa;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --ground: #23262d; }
+  }
+  :root[data-theme="dark"] { --ground: #23262d; }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.4;
+  }
+  .toolbar { display: flex; justify-content: center; gap: 12px; padding: 14px; }
+  .toolbar button {
+    font: 500 10.5pt "IBM Plex Sans", system-ui, sans-serif;
+    padding: 8px 16px; border-radius: 4px; border: 1px solid var(--ink-2);
+    background: var(--paper); color: var(--ink); cursor: pointer;
+  }
+  .toolbar button:focus-visible { outline: 2px solid var(--i2c); outline-offset: 2px; }
+  .sheet {
+    width: 8.5in; min-height: 11in; margin: 0 auto 18px; padding: 0.55in 0.6in;
+    background: var(--paper); color: var(--ink);
+    box-shadow: 0 2px 14px rgba(0,0,0,.18);
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  header {
+    display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 12px;
+    border-bottom: 2px solid var(--ink); padding-bottom: 8px;
+  }
+  h1 { font-size: 20pt; font-weight: 600; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+  .sub { color: var(--ink-2); margin: 2px 0 0; }
+  .meta { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 8.5pt; color: var(--ink-2); text-align: right; line-height: 1.5; }
+  h2 {
+    font-size: 8.5pt; font-weight: 600; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--ink-2); margin: 0 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--rule);
+  }
+  figure { margin: 0; }
+  svg { width: 100%; height: auto; display: block; }
+  svg text { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 10.5px; fill: var(--ink); }
+  svg .t-title { font-family: "IBM Plex Sans", system-ui, sans-serif; font-weight: 600; font-size: 12px; }
+  svg .t-note { font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: 9.5px; fill: var(--ink-2); }
+  svg .t-pin { font-size: 10px; }
+  svg .t-pin.r { text-anchor: end; }
+  svg .wire { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  svg .w-5v { stroke: var(--v5); }
+  svg .w-33 { stroke: var(--v33); }
+  svg .w-gnd { stroke: var(--gnd); }
+  svg .w-i2c { stroke: var(--i2c); }
+  svg .w-sig { stroke: var(--sig); }
+  svg .w-touch { stroke: var(--touch); }
+  svg .w-load { stroke: var(--ink-2); stroke-width: 1.6; }
+  svg .pin { stroke: var(--ink-2); stroke-width: 1.4; }
+  svg .box { fill: var(--mod-fill); stroke: var(--ink-2); stroke-width: 1.2; }
+  svg .board { fill: var(--board-fill); stroke: var(--board); stroke-width: 1.6; }
+  svg .pad { fill: #ffffff; stroke: var(--touch); stroke-width: 1.2; }
+  svg .comp { fill: #ffffff; stroke: var(--ink); stroke-width: 1.4; }
+  svg .junction { fill: var(--v5); }
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 9pt; color: var(--ink-2);
+    padding: 6px 0 0; border-top: 1px solid var(--rule-soft);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { display: inline-block; width: 22px; height: 3px; border-radius: 2px; }
+  .notes { columns: 2; column-gap: 24px; font-size: 9.5pt; margin: 0; padding-left: 16px; }
+  .notes li { break-inside: avoid; margin-bottom: 4px; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 9.5pt; }
+  th { text-align: left; font-weight: 600; font-size: 8.5pt; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); padding: 4px 8px; background: var(--band); }
+  td { padding: 4px 8px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+  td.mono, .mono { font-family: "IBM Plex Mono", Consolas, monospace; font-size: 9.5pt; white-space: nowrap; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .check { list-style: none; margin: 0; padding: 0; font-size: 9.5pt; }
+  .check li { display: grid; grid-template-columns: 14px 1fr; gap: 8px; padding: 3px 0; border-bottom: 1px solid var(--rule-soft); align-items: start; }
+  .check li::before { content: ""; width: 11px; height: 11px; border: 1.3px solid var(--ink-2); border-radius: 2px; margin-top: 3px; }
+  .check b { font-weight: 600; }
+  .fine { font-size: 8.5pt; color: var(--ink-3); margin: 0; }
+  .page-break { break-after: page; }
+
+  @media print {
+    @page { size: letter; margin: 0.45in; }
+    body { background: #fff; }
+    .toolbar { display: none; }
+    .sheet { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; }
+  }
+</style>
+
+<div class="toolbar"><button type="button" onclick="window.print()">Print this sheet</button></div>
+
+<section class="sheet page-break">
+  <header>
+    <div>
+      <h1>Kids Alarm Clock Wiring</h1>
+      <p class="sub">ESP32 · 16x2 LCD (PCF8574) · arcade dismiss button · TTP224 touch pads · DFPlayer Mini MP3 · 5 V USB</p>
+    </div>
+    <div class="meta">Build per clock ×2<br>Rev 6 · 2026-09-14 · arcade = stop, pad 2 = next sound, pad 1 spare<br>kids-alarm-clock / docs</div>
+  </header>
+
+  <figure>
+    <svg viewBox="0 0 860 560" role="img" aria-label="Wiring schematic: ESP32 in the centre, LCD backpack top-left, piezo left, arcade dismiss button and TTP224 touch module top-right, DFPlayer Mini bottom-right with the speaker below it">
+      <!-- ================= LCD backpack ================= -->
+      <rect class="box" x="50" y="60" width="170" height="140" rx="3"/>
+      <text class="t-title" x="62" y="80">16x2 LCD</text>
+      <text class="t-note" x="62" y="94">PCF8574 I2C backpack</text>
+      <text class="t-note" x="62" y="180">addr 0x27 (or 0x3F)</text>
+      <rect x="62" y="104" width="120" height="58" rx="2" fill="#dfe8f2" stroke="#9fb3c8" stroke-width="1"/>
+      <text x="70" y="126" style="font-size:9.5px;fill:#334155"> 7:05 AM    Sat</text>
+      <text x="70" y="148" style="font-size:9.5px;fill:#334155">Alarm  7:00a on</text>
+      <line class="pin" x1="220" y1="95" x2="232" y2="95"/>
+      <line class="pin" x1="220" y1="120" x2="232" y2="120"/>
+      <line class="pin" x1="220" y1="150" x2="232" y2="150"/>
+      <line class="pin" x1="220" y1="175" x2="232" y2="175"/>
+      <text class="t-pin r" x="215" y="98">SCL</text>
+      <text class="t-pin r" x="215" y="123">SDA</text>
+      <text class="t-pin r" x="215" y="153">GND</text>
+      <text class="t-pin r" x="215" y="178">VCC</text>
+
+      <!-- ================= ESP32 ================= -->
+      <rect class="board" x="330" y="60" width="150" height="350" rx="4"/>
+      <text class="t-title" x="405" y="84" text-anchor="middle">ESP32</text>
+      <text class="t-note" x="405" y="98" text-anchor="middle">WROOM dev board</text>
+      <rect x="380" y="108" width="50" height="34" rx="2" fill="#c9d6cf" stroke="#6b8f82" stroke-width="1"/>
+      <text class="t-note" x="405" y="129" text-anchor="middle">WiFi</text>
+      <rect x="392" y="410" width="26" height="14" fill="#d9dde3" stroke="#6b7280" stroke-width="1"/>
+      <text class="t-note" x="405" y="440" text-anchor="middle">USB 5 V in (2 A adapter)</text>
+      <!-- left pins -->
+      <line class="pin" x1="318" y1="95" x2="330" y2="95"/>
+      <line class="pin" x1="318" y1="120" x2="330" y2="120"/>
+      <line class="pin" x1="318" y1="150" x2="330" y2="150"/>
+      <line class="pin" x1="318" y1="175" x2="330" y2="175"/>
+      <line class="pin" x1="318" y1="250" x2="330" y2="250"/>
+      <line class="pin" x1="318" y1="280" x2="330" y2="280"/>
+      <text class="t-pin" x="336" y="98">GPIO22</text>
+      <text class="t-pin" x="336" y="123">GPIO21</text>
+      <text class="t-pin" x="336" y="153">GND</text>
+      <text class="t-pin" x="336" y="178">VIN</text>
+      <text class="t-pin" x="336" y="253">GPIO25</text>
+      <text class="t-pin" x="336" y="283">GND</text>
+      <!-- right pins -->
+      <line class="pin" x1="480" y1="95" x2="492" y2="95"/>
+      <line class="pin" x1="480" y1="120" x2="492" y2="120"/>
+      <line class="pin" x1="480" y1="160" x2="492" y2="160"/>
+      <line class="pin" x1="480" y1="185" x2="492" y2="185"/>
+      <line class="pin" x1="480" y1="210" x2="492" y2="210"/>
+      <line class="pin" x1="480" y1="235" x2="492" y2="235"/>
+      <line class="pin" x1="480" y1="260" x2="492" y2="260"/>
+      <line class="pin" x1="480" y1="330" x2="492" y2="330"/>
+      <line class="pin" x1="480" y1="355" x2="492" y2="355"/>
+      <line class="pin" x1="480" y1="380" x2="492" y2="380"/>
+      <text class="t-pin r" x="474" y="98">3V3</text>
+      <text class="t-pin r" x="474" y="123">GND</text>
+      <text class="t-pin r" x="474" y="163">GPIO32</text>
+      <text class="t-pin r" x="474" y="188">GPIO33</text>
+      <text class="t-pin r" x="474" y="213">GPIO34</text>
+      <text class="t-pin r" x="474" y="238">GPIO35</text>
+      <text class="t-pin r" x="474" y="263">GPIO27</text>
+      <text class="t-pin r" x="474" y="333">GPIO17</text>
+      <text class="t-pin r" x="474" y="358">GPIO16</text>
+      <text class="t-pin r" x="474" y="383">GND</text>
+
+      <!-- ================= piezo (left, under LCD) ================= -->
+      <line class="wire w-sig" x1="318" y1="250" x2="302" y2="250"/>
+      <line class="wire w-sig" x1="302" y1="250" x2="302" y2="257"/>
+      <circle class="comp" cx="302" cy="265" r="8"/>
+      <line class="wire w-gnd" x1="302" y1="273" x2="302" y2="280"/>
+      <line class="wire w-gnd" x1="302" y1="280" x2="318" y2="280"/>
+      <text class="t-note r" x="290" y="262" text-anchor="end">passive piezo</text>
+      <text class="t-note r" x="290" y="274" text-anchor="end">pad blips, optional</text>
+
+      <!-- ================= TTP224 ================= -->
+      <rect class="box" x="590" y="60" width="170" height="205" rx="3"/>
+      <text class="t-title" x="602" y="80">TTP224</text>
+      <text class="t-note" x="602" y="94">4-pad touch module</text>
+      <rect class="pad" x="655" y="150" width="26" height="26" rx="2"/>
+      <rect class="pad" x="655" y="175" width="26" height="26" rx="2"/>
+      <rect class="pad" x="655" y="200" width="26" height="26" rx="2"/>
+      <rect class="pad" x="655" y="225" width="26" height="26" rx="2"/>
+      <text class="t-note" x="690" y="167">1  spare (GPIO27)</text>
+      <text class="t-note" x="690" y="192">2  Next ringer</text>
+      <text class="t-note" x="690" y="217">3  Volume −</text>
+      <text class="t-note" x="690" y="242">4  Volume +</text>
+      <text class="t-note" x="602" y="118">outputs idle HIGH, LOW on touch</text>
+      <line class="pin" x1="578" y1="95" x2="590" y2="95"/>
+      <line class="pin" x1="578" y1="120" x2="590" y2="120"/>
+      <line class="pin" x1="578" y1="160" x2="590" y2="160"/>
+      <line class="pin" x1="578" y1="185" x2="590" y2="185"/>
+      <line class="pin" x1="578" y1="210" x2="590" y2="210"/>
+      <line class="pin" x1="578" y1="235" x2="590" y2="235"/>
+      <text class="t-pin" x="596" y="98">V</text>
+      <text class="t-pin" x="596" y="123">G</text>
+      <text class="t-pin" x="596" y="163">1</text>
+      <text class="t-pin" x="596" y="188">2</text>
+      <text class="t-pin" x="596" y="213">3</text>
+      <text class="t-pin" x="596" y="238">4</text>
+      <text class="t-note" x="602" y="139">V → 3V3, not 5 V</text>
+
+      <!-- ================= DFPlayer Mini ================= -->
+      <rect class="box" x="590" y="300" width="170" height="130" rx="3"/>
+      <text class="t-title" x="602" y="320">DFPlayer Mini</text>
+      <text class="t-note" x="602" y="334">YX5200 · MP3 from microSD</text>
+      <rect x="700" y="342" width="44" height="30" rx="2" fill="#d9dde3" stroke="#6b7280" stroke-width="1"/>
+      <text class="t-note" x="722" y="361" text-anchor="middle">microSD</text>
+      <text class="t-note" x="602" y="397">card: /01/001.mp3 … 010.mp3</text>
+      <line class="pin" x1="578" y1="330" x2="590" y2="330"/>
+      <line class="pin" x1="578" y1="355" x2="590" y2="355"/>
+      <line class="pin" x1="578" y1="380" x2="590" y2="380"/>
+      <text class="t-pin" x="596" y="333">RX</text>
+      <text class="t-pin" x="596" y="358">TX</text>
+      <text class="t-pin" x="596" y="383">GND</text>
+      <!-- bottom pins -->
+      <line class="pin" x1="615" y1="430" x2="615" y2="442"/>
+      <line class="pin" x1="690" y1="430" x2="690" y2="442"/>
+      <line class="pin" x1="720" y1="430" x2="720" y2="442"/>
+      <text class="t-pin" x="615" y="423" text-anchor="middle">VCC</text>
+      <text class="t-pin" x="690" y="423" text-anchor="middle">SPK_1</text>
+      <text class="t-pin" x="720" y="423" text-anchor="middle">SPK_2</text>
+
+      <!-- ================= wires ================= -->
+      <!-- LCD <-> ESP straight runs -->
+      <line class="wire w-i2c" x1="232" y1="95" x2="318" y2="95"/>
+      <line class="wire w-i2c" x1="232" y1="120" x2="318" y2="120"/>
+      <line class="wire w-gnd" x1="232" y1="150" x2="318" y2="150"/>
+      <line class="wire w-5v" x1="232" y1="175" x2="318" y2="175"/>
+      <!-- VIN junction -> DFPlayer VCC -->
+      <polyline class="wire w-5v" points="280,175 280,480 615,480 615,442"/>
+      <circle class="junction" cx="280" cy="175" r="3.5"/>
+      <text class="t-note" x="292" y="470">VIN (USB 5 V) to DFPlayer VCC</text>
+      <!-- ESP right <-> TTP224 -->
+      <line class="wire w-33" x1="492" y1="95" x2="578" y2="95"/>
+      <line class="wire w-gnd" x1="492" y1="120" x2="578" y2="120"/>
+      <!-- arcade dismiss button: NO to GPIO32, COM to GND (junction on the GND run) -->
+      <line class="wire w-touch" x1="492" y1="160" x2="530" y2="160"/>
+      <line class="wire w-touch" x1="530" y1="160" x2="530" y2="150"/>
+      <circle class="comp" cx="530" cy="148" r="2"/>
+      <line stroke="#1c2230" stroke-width="1.6" x1="530" y1="148" x2="541" y2="132"/>
+      <circle class="comp" cx="530" cy="128" r="2"/>
+      <line class="wire w-gnd" x1="530" y1="126" x2="530" y2="120"/>
+      <circle class="junction" cx="530" cy="120" r="3.5" style="fill:#1c2230"/>
+      <rect class="comp" x="544" y="135" width="26" height="14" rx="7"/>
+      <text class="t-note" x="557" y="145" text-anchor="middle" style="font-size:8px">DISMISS</text>
+      <text class="t-note" x="500" y="176">arcade button</text>
+      <line class="wire w-touch" x1="492" y1="185" x2="578" y2="185"/>
+      <line class="wire w-touch" x1="492" y1="210" x2="578" y2="210"/>
+      <line class="wire w-touch" x1="492" y1="235" x2="578" y2="235"/>
+      <!-- pad 1 (spare): GPIO27 up the right edge to the module's pin 1; crossings are not joins -->
+      <line class="wire w-touch" x1="492" y1="260" x2="572" y2="260"/>
+      <line class="wire w-touch" x1="572" y1="260" x2="572" y2="160"/>
+      <line class="wire w-touch" x1="572" y1="160" x2="578" y2="160"/>
+      <!-- ESP right <-> DFPlayer serial, 1k inline on the RX line -->
+      <line class="wire w-sig" x1="492" y1="330" x2="520" y2="330"/>
+      <rect class="comp" x="520" y="324" width="30" height="12" rx="1"/>
+      <text class="t-pin" x="535" y="319" text-anchor="middle">1k</text>
+      <line class="wire w-sig" x1="550" y1="330" x2="578" y2="330"/>
+      <line class="wire w-sig" x1="492" y1="355" x2="578" y2="355"/>
+      <line class="wire w-gnd" x1="492" y1="380" x2="578" y2="380"/>
+      <text class="t-note" x="535" y="349" text-anchor="middle">serial 9600</text>
+
+      <!-- ================= speaker ================= -->
+      <line class="wire w-load" x1="690" y1="442" x2="690" y2="490"/>
+      <line class="wire w-load" x1="720" y1="442" x2="720" y2="490"/>
+      <rect class="comp" x="690" y="490" width="30" height="14"/>
+      <polygon class="comp" points="720,489 736,480 736,514 720,505"/>
+      <text class="t-note" x="705" y="530" text-anchor="middle">8 Ω speaker</text>
+      <text class="t-note" x="705" y="542" text-anchor="middle">straight to SPK pins</text>
+    </svg>
+  </figure>
+
+  <div class="legend">
+    <span><i style="background:var(--v5)"></i>5 V (VIN)</span>
+    <span><i style="background:var(--v33)"></i>3V3</span>
+    <span><i style="background:var(--gnd)"></i>GND</span>
+    <span><i style="background:var(--i2c)"></i>I2C</span>
+    <span><i style="background:var(--touch)"></i>touch pads</span>
+    <span><i style="background:var(--sig)"></i>serial / piezo</span>
+    <span><i style="background:var(--ink-2)"></i>speaker</span>
+  </div>
+
+  <div>
+    <h2>Read this first</h2>
+    <ol class="notes">
+      <li>Pin <em>positions</em> on the drawing are schematic. Find each pin by its printed label; GND appears several times on an ESP32 and any one is fine.</li>
+      <li>LCD backpack runs on 5 V (VIN). At 3.3 V the contrast is too faint to read.</li>
+      <li>Arcade button: microswitch <b>COM to GND, NO to GPIO32</b>, NC empty. Any GND pin. Internal pull-up handles it.</li>
+      <li>TTP224 <b>V goes to 3V3</b> so its outputs stay at 3.3 V. GPIO34/35 are input-only pins, which is fine for this module. Pad 1 goes to GPIO27 (spare input, no job yet). Our modules idle HIGH and pull LOW on touch; firmware is set for that. If every pad reads ON untouched on a new module, flip <span class="mono">btn_inverted</span> in that board's YAML.</li>
+      <li>DFPlayer runs on 5 V. Its TX at 3.3 V logic is safe into GPIO16. The <b>1k on the RX line</b> is required: without it the player hisses and can misread commands.</li>
+      <li>Speaker goes straight to SPK_1 / SPK_2. The player has its own 3 W amp, so no resistor, diode or MOSFET module.</li>
+      <li>Use a 2 A USB adapter. The player draws bursts near 1 A at full volume.</li>
+      <li>Piezo is a passive buzzer between GPIO25 and GND, for pad-press blips only. Leave it off if you don't have one.</li>
+      <li>Wait about 2 s after power before expecting the player to respond; the firmware already does.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="sheet">
+  <header>
+    <div>
+      <h1>Pins, parts, bench checks</h1>
+      <p class="sub">Companion page to the wiring schematic</p>
+    </div>
+    <div class="meta">Rev 6 · 2026-09-14<br>kids-alarm-clock / docs</div>
+  </header>
+
+  <div>
+    <h2>Connections</h2>
+    <table>
+      <thead><tr><th>Wire</th><th>ESP32</th><th>Goes to</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td><span class="swatch" style="background:var(--v5)"></span>red</td><td class="mono">VIN</td><td class="mono">LCD VCC · DFPlayer VCC</td><td>5 V from USB, one junction feeds both</td></tr>
+        <tr><td><span class="swatch" style="background:var(--v33)"></span>orange</td><td class="mono">3V3</td><td class="mono">TTP224 V</td><td>3.3 V so pad outputs are ESP-safe</td></tr>
+        <tr><td><span class="swatch" style="background:var(--gnd)"></span>black</td><td class="mono">GND</td><td class="mono">LCD GND · TTP224 G · DFPlayer GND · piezo −</td><td>Common ground, four wires</td></tr>
+        <tr><td><span class="swatch" style="background:var(--i2c)"></span>blue</td><td class="mono">GPIO21</td><td class="mono">LCD SDA</td><td>I2C data</td></tr>
+        <tr><td><span class="swatch" style="background:var(--i2c)"></span>blue</td><td class="mono">GPIO22</td><td class="mono">LCD SCL</td><td>I2C clock</td></tr>
+        <tr><td><span class="swatch" style="background:var(--touch)"></span>teal</td><td class="mono">GPIO32</td><td class="mono">arcade button NO (COM → GND)</td><td>Dismiss (stops the alarm)</td></tr>
+        <tr><td><span class="swatch" style="background:var(--touch)"></span>teal</td><td class="mono">GPIO27</td><td class="mono">TTP224 1</td><td>Spare, wired for later (wakes backlight)</td></tr>
+        <tr><td><span class="swatch" style="background:var(--touch)"></span>teal</td><td class="mono">GPIO33</td><td class="mono">TTP224 2</td><td>Next ringer, 5 s preview (Snooze lives on the HA card)</td></tr>
+        <tr><td><span class="swatch" style="background:var(--touch)"></span>teal</td><td class="mono">GPIO34</td><td class="mono">TTP224 3</td><td>Volume down</td></tr>
+        <tr><td><span class="swatch" style="background:var(--touch)"></span>teal</td><td class="mono">GPIO35</td><td class="mono">TTP224 4</td><td>Volume up</td></tr>
+        <tr><td><span class="swatch" style="background:var(--sig)"></span>violet</td><td class="mono">GPIO17</td><td class="mono">1k → DFPlayer RX</td><td>ESP transmit, commands to the player</td></tr>
+        <tr><td><span class="swatch" style="background:var(--sig)"></span>violet</td><td class="mono">GPIO16</td><td class="mono">DFPlayer TX</td><td>ESP receive, "track finished" replies</td></tr>
+        <tr><td><span class="swatch" style="background:var(--sig)"></span>violet</td><td class="mono">GPIO25</td><td class="mono">piezo +</td><td>Pad blips (optional)</td></tr>
+        <tr><td><span class="swatch" style="background:var(--ink-2)"></span>speaker</td><td class="mono">—</td><td class="mono">SPK_1 → speaker → SPK_2</td><td>Either way round</td></tr>
+      </tbody>
+    </table>
+    <p class="fine" style="margin-top:6px">Not used: GPIO 0, 2, 12, 15 (boot strapping pins). GPIO26 reserved for backlight dimming later.</p>
+  </div>
+
+  <div class="two">
+    <div>
+      <h2>Parts per clock</h2>
+      <ul class="check">
+        <li><span><b>ESP32 WROOM dev board</b> + micro-USB data cable</span></li>
+        <li><span><b>16x2 LCD</b> with PCF8574 I2C backpack</span></li>
+        <li><span><b>Arcade button</b>, microswitch type (COM / NO / NC)</span></li>
+        <li><span><b>TTP224</b> 4-pad touch module (all four pads wired, pad 1 spare)</span></li>
+        <li><span><b>DFPlayer Mini</b>, YX5200 chip</span></li>
+        <li><span><b>microSD card</b>, 32 GB or less, FAT32, folder <span class="mono">01</span> with <span class="mono">001.mp3</span>–<span class="mono">010.mp3</span> (Track 1–10 in HA)</span></li>
+        <li><span><b>8 Ω speaker</b>, small</span></li>
+        <li><span><b>1 kΩ resistor</b> for the RX line</span></li>
+        <li><span><b>Passive piezo</b> (optional)</span></li>
+        <li><span><b>5 V USB wall adapter</b>, 2 A</span></li>
+        <li><span>Dupont wires: 4 LCD, 2 button, 5 touch, 5 DFPlayer, 2 speaker, 2 piezo</span></li>
+      </ul>
+    </div>
+    <div>
+      <h2>Bench checks with bench.yaml</h2>
+      <ul class="check">
+        <li><span><b>Power up</b> from OMEN USB. LCD backlight on, ESP LED on, DFPlayer LED off until it plays.</span></li>
+        <li><span><b>I2C scan</b> in the log shows the backpack. If it says <span class="mono">0x3F</span>, change <span class="mono">address</span> in both YAMLs.</span></li>
+        <li><span><b>LCD</b> prints "Bench OK" and a counting uptime. Blank boxes only: turn the contrast pot on the backpack.</span></li>
+        <li><span><b>Arcade button</b> plays <span class="mono">/01/001.mp3</span>; the player's blue LED lights while playing. <b>Pad 2</b> stops it.</span></li>
+        <li><span><b>Pads 3 / 4</b> step volume down / up while a track plays.</span></li>
+        <li><span><b>Silent, LED never lights</b>: card not read. Reformat FAT32, check folder/file names, reseat the card.</span></li>
+        <li><span><b>Hiss or garbled commands</b>: the 1k on RX is missing, or TX/RX are swapped.</span></li>
+        <li><span><b>Log shows "DFPlayer finished track"</b> after a song ends. That event is what loops the alarm.</span></li>
+        <li><span><b>Then flash alarm-board-1</b> and press Test Alarm in HA.</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div>
+    <h2>DFPlayer Mini pins (16-pin, card slot at the top)</h2>
+    <table>
+      <thead><tr><th>Left column, top → bottom</th><th>Connect</th><th>Right column, top → bottom</th><th>Connect</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">VCC</td><td>ESP VIN (5 V)</td><td class="mono">BUSY</td><td>open</td></tr>
+        <tr><td class="mono">RX</td><td>1k from ESP GPIO17</td><td class="mono">USB−</td><td>open</td></tr>
+        <tr><td class="mono">TX</td><td>ESP GPIO16</td><td class="mono">USB+</td><td>open</td></tr>
+        <tr><td class="mono">DAC_R</td><td>open</td><td class="mono">ADKEY2</td><td>open</td></tr>
+        <tr><td class="mono">DAC_L</td><td>open</td><td class="mono">ADKEY1</td><td>open</td></tr>
+        <tr><td class="mono">SPK_1</td><td>speaker</td><td class="mono">IO2</td><td>open</td></tr>
+        <tr><td class="mono">GND</td><td>ESP GND</td><td class="mono">GND</td><td>open (same net)</td></tr>
+        <tr><td class="mono">SPK_2</td><td>speaker</td><td class="mono">IO1</td><td>open</td></tr>
+      </tbody>
+    </table>
+    <p class="fine" style="margin-top:6px">Everything you need is in the left column. Confirm against the silkscreen: some clones print the pin names on the underside.</p>
+  </div>
+</section>

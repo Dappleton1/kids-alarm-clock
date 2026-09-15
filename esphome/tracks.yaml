@@ -1,0 +1,21 @@
+# The ten sounds on the card, in order (docs/tracks.md). Position N plays /01/0NN.mp3 - edit names/order to match your card.
+select:
+  - platform: template
+    id: alarm_tune
+    name: "Alarm Track"
+    icon: mdi:music
+    optimistic: true
+    restore_value: true
+    initial_option: "Rooster"
+    # position N plays /01/0NN.mp3 - keep this order in sync with TRACKS.md on the card
+    options:
+      - "Rooster"
+      - "Clock Alarm"
+      - "Birds"
+      - "Classic Alarm"
+      - "Digital Buzzer"
+      - "Farm Animals"
+      - "Morning Joy"
+      - "Chiptune"
+      - "Soft Plucks"
+      - "Be Happy"

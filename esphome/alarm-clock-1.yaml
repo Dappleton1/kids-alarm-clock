@@ -1,0 +1,15 @@
+# Clock 1. Copy this file per clock, change the two names and the secret key.
+substitutions:
+  name: alarm-clock-1
+  friendly_name: Alarm Clock 1
+  # Our TTP224 modules idle HIGH and pull LOW on touch. If every pad shows ON in Home Assistant when
+  # nobody is touching it, yours is the same; if the pads never trigger, set this to "false".
+  btn_inverted: "true"
+
+packages:
+  common: !include kids_alarm_common.yaml
+  tracks: !include tracks.yaml
+
+api:
+  encryption:
+    key: !secret api_key_clock_1

@@ -1,0 +1,536 @@
+# Kids alarm clock - shared package. Per-device files set substitutions + api key.
+# Hardware: ESP32 WROOM, 16x2 LCD on PCF8574 I2C backpack, arcade button for dismiss,
+# TTP224 touch module (pad 1 spare / pad 2 next ringer + 5 s preview / pads 3-4 vol- / vol+), DFPlayer Mini (YX5200) on UART2
+# driving an 8 ohm speaker, passive piezo on GPIO25 for pad blips.
+# Alarm logic runs ON the device; HA only sets times/switches and syncs the clock.
+# microSD layout: /01/001.mp3 ... /01/010.mp3  (folder 01, three-digit file names)
+
+substitutions:
+  # Dismiss = arcade button (big target for a half-asleep kid): microswitch COM -> GND,
+  # NO -> GPIO32, internal pull-up. To use TTP224 pad 1 instead, override in the device file:
+  #   arcade_mode: INPUT   arcade_inverted: "false"
+  arcade_mode: INPUT_PULLUP
+  arcade_inverted: "true"
+  # Pads 1-4 = TTP224 touch module, powered from 3V3, push-pull outputs. Both of our modules idle HIGH
+  # and pull LOW on touch (AHLB-style clone), hence inverted. A stock active-HIGH module: btn_inverted: "false".
+  # Plain mechanical buttons to GND: btn_mode: INPUT_PULLUP  btn_inverted: "true" (34/35 need external 10k).
+  btn_mode: INPUT
+  btn_inverted: "true"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  min_version: 2026.4.0
+  name_add_mac_suffix: false
+  on_boot:
+    priority: -100
+    then:
+      - script.execute: boot_init
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+logger:
+  level: INFO
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  min_auth_mode: WPA2
+  fast_connect: true
+  ap:
+    ssid: "${friendly_name} Fallback"
+    password: !secret ap_fallback_password
+
+captive_portal:
+
+time:
+  - platform: homeassistant
+    id: ha_time
+    timezone: America/Edmonton
+    on_time_sync:
+      - script.execute: backlight_apply
+  - platform: sntp
+    id: sntp_time
+    timezone: America/Edmonton
+
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  scan: true
+
+uart:
+  id: uart_mp3
+  tx_pin: GPIO17      # -> DFPlayer RX through a 1k resistor
+  rx_pin: GPIO16      # <- DFPlayer TX
+  baud_rate: 9600
+
+# ---------- state ----------
+globals:
+  - id: alarm_state          # 0 idle, 1 ringing, 2 snoozed
+    type: int
+    initial_value: "0"
+  - id: vol_shown_until      # millis() deadline for the "Volume" overlay on the LCD
+    type: uint32_t
+    initial_value: "0"
+  - id: track_shown_until    # millis() deadline for the track-name overlay after a pad 2 press
+    type: uint32_t
+    initial_value: "0"
+  - id: bl_quiet             # true while inside the lights-off window (set by backlight_eval)
+    type: bool
+    initial_value: "false"
+
+# ---------- HA-settable config ----------
+datetime:
+  - platform: template
+    id: weekday_alarm
+    name: "Weekday Alarm"
+    type: time
+    optimistic: true
+    restore_value: true
+    initial_value: "07:00:00"
+    time_id: ha_time
+    on_time:
+      - script.execute: { id: alarm_due, for_weekend: false }
+  - platform: template
+    id: weekend_alarm
+    name: "Weekend Alarm"
+    type: time
+    optimistic: true
+    restore_value: true
+    initial_value: "08:00:00"
+    time_id: ha_time
+    on_time:
+      - script.execute: { id: alarm_due, for_weekend: true }
+  - platform: template
+    id: lights_off_at
+    name: "Lights Off At"
+    icon: mdi:weather-night
+    type: time
+    optimistic: true
+    restore_value: true
+    initial_value: "19:30:00"
+    time_id: ha_time
+    on_time:
+      - script.execute: backlight_apply
+  - platform: template
+    id: lights_on_at
+    name: "Lights On At"
+    icon: mdi:weather-sunny
+    type: time
+    optimistic: true
+    restore_value: true
+    initial_value: "07:00:00"
+    time_id: ha_time
+    on_time:
+      - script.execute: backlight_apply
+
+switch:
+  - platform: template
+    id: alarm_enabled
+    name: "Alarm Enabled"
+    icon: mdi:alarm
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+  - platform: template
+    id: holiday_mode
+    name: "Holiday Mode"
+    icon: mdi:beach
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+  - platform: template
+    id: skip_next
+    name: "Skip Next Alarm"
+    icon: mdi:alarm-snooze
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+  - platform: template
+    id: auto_backlight
+    name: "Auto Backlight"
+    icon: mdi:lightbulb-auto
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+    turn_off_action:
+      - switch.turn_on: backlight
+  - platform: template
+    id: backlight
+    name: "Backlight"
+    icon: mdi:lightbulb
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
+    turn_on_action:
+      - lambda: id(lcd).backlight();
+      - script.execute: backlight_timeout    # only acts inside the lights-off window
+    turn_off_action:
+      - lambda: id(lcd).no_backlight();
+
+number:
+  - platform: template
+    id: snooze_minutes
+    name: "Snooze Minutes"
+    icon: mdi:timer-sand
+    min_value: 1
+    max_value: 30
+    step: 1
+    initial_value: 9
+    optimistic: true
+    restore_value: true
+    unit_of_measurement: min
+    mode: box
+  - platform: template
+    id: max_ring_minutes
+    name: "Max Ring Minutes"
+    icon: mdi:timer-off
+    min_value: 1
+    max_value: 30
+    step: 1
+    initial_value: 10
+    optimistic: true
+    restore_value: true
+    unit_of_measurement: min
+    mode: box
+  - platform: template
+    id: backlight_timeout_s
+    name: "Backlight Timeout"
+    icon: mdi:timer-outline
+    min_value: 3
+    max_value: 300
+    step: 1
+    initial_value: 15
+    optimistic: true
+    restore_value: true
+    unit_of_measurement: s
+    mode: box
+  # DFPlayer volume is 0-30. Floor at 3 so the pads can't mute the alarm.
+  - platform: template
+    id: volume
+    name: "Volume"
+    icon: mdi:volume-high
+    min_value: 3
+    max_value: 30
+    step: 1
+    initial_value: 18
+    optimistic: true
+    restore_value: true
+    mode: slider
+    set_action:
+      - lambda: |-
+          id(mp3).set_volume((uint8_t) x);
+          id(vol_shown_until) = millis() + 2000;
+      - rtttl.play: "blip:d=16,o=6,b=240:c"
+
+# The "Alarm Track" select lives in tracks.yaml (one entry per file on the card, in order).
+# Common code only uses id(alarm_tune).
+
+text_sensor:
+  - platform: template
+    id: alarm_state_text
+    name: "Alarm State"
+    icon: mdi:alarm-check
+    update_interval: never
+
+button:
+  - platform: template
+    name: "Test Alarm"
+    icon: mdi:alarm-bell
+    on_press:
+      - script.execute: start_ringing
+  - platform: template
+    name: "Snooze"
+    icon: mdi:alarm-snooze
+    on_press:
+      - script.execute: backlight_wake
+      - script.execute: snooze
+  - platform: template
+    name: "Dismiss"
+    icon: mdi:alarm-off
+    on_press:
+      - script.execute: backlight_wake
+      - script.execute: dismiss
+
+# ---------- touch pads / buttons ----------
+binary_sensor:
+  - platform: gpio
+    id: dismiss_button
+    name: "Dismiss Button"
+    pin:
+      number: GPIO32
+      mode: ${arcade_mode}
+      inverted: ${arcade_inverted}
+    filters:
+      - delayed_on: 30ms       # microswitch bounce
+      - delayed_off: 50ms
+    on_press:
+      - script.execute: backlight_wake
+      - script.execute: dismiss
+  - platform: gpio
+    id: pad_1
+    name: "Pad 1"
+    pin:
+      number: GPIO27
+      mode: ${btn_mode}
+      inverted: ${btn_inverted}
+    filters:
+      - delayed_on: 30ms
+    on_press:            # spare pad: wakes the backlight, no other action yet
+      - script.execute: backlight_wake
+      - logger.log: "Pad 1 pressed (spare, no action assigned)"
+  - platform: gpio
+    id: pad_track
+    name: "Pad 2 Track"
+    pin:
+      number: GPIO33
+      mode: ${btn_mode}
+      inverted: ${btn_inverted}
+    filters:
+      - delayed_on: 30ms
+    on_press:            # next ringer + 5 s preview (ignored while ringing/snoozed)
+      - script.execute: backlight_wake
+      - script.execute: preview_track
+  - platform: gpio
+    id: pad_vol_down
+    name: "Pad 3 Volume Down"
+    pin:
+      number: GPIO34        # input-only pin, fine for a driven signal (no pull-up available)
+      mode: INPUT
+      inverted: ${btn_inverted}
+    filters:
+      - delayed_on: 30ms
+    on_press:
+      - script.execute: backlight_wake
+      - number.decrement:
+          id: volume
+          cycle: false
+  - platform: gpio
+    id: pad_vol_up
+    name: "Pad 4 Volume Up"
+    pin:
+      number: GPIO35        # input-only pin
+      mode: INPUT
+      inverted: ${btn_inverted}
+    filters:
+      - delayed_on: 30ms
+    on_press:
+      - script.execute: backlight_wake
+      - number.increment:
+          id: volume
+          cycle: false
+
+# ---------- audio ----------
+dfplayer:
+  id: mp3
+  uart_id: uart_mp3
+  on_finished_playback:
+    # keep looping the track while the alarm is ringing
+    - if:
+        condition:
+          lambda: return id(alarm_state) == 1;
+        then:
+          - delay: 300ms
+          - script.execute: play_tune
+
+# passive piezo GPIO25 -> GND: short blips for pad presses only
+output:
+  - platform: ledc
+    id: piezo_pwm
+    pin: GPIO25
+
+rtttl:
+  id: blip
+  output: piezo_pwm
+
+# ---------- display ----------
+display:
+  - platform: lcd_pcf8574
+    id: lcd
+    dimensions: 16x2
+    address: 0x27
+    update_interval: 1s
+    lambda: |-
+      auto now = id(ha_time).now();
+      if (!now.is_valid()) { it.print(0, 0, "Syncing time..."); return; }
+      it.strftime(0, 0, "%l:%M %p    %a", now);
+      if (millis() < id(vol_shown_until)) { it.printf(0, 1, "Volume %2d of 30 ", (int) id(volume).state); return; }
+      if (millis() < id(track_shown_until)) { it.printf(0, 1, "%-16.16s", id(alarm_tune).current_option().c_str()); return; }
+      int st = id(alarm_state);
+      if (st == 1) { it.print(0, 1, "** WAKE UP! **  "); return; }
+      if (st == 2) { it.printf(0, 1, "Snooze %d min   ", (int) id(snooze_minutes).state); return; }
+      if (!id(alarm_enabled).state) { it.print(0, 1, "Alarm off       "); return; }
+      // Next ring, not today's setting: walk forward from now, weekend time on Sat/Sun or in holiday
+      // mode, and let Skip Next swallow the first one. Tag = "on" if it is today, else the day name.
+      static const char *DOW[] = {"", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+      int d0 = now.day_of_week, nowmin = now.hour * 60 + now.minute;
+      bool skip = id(skip_next).state;
+      int h = 0, m = 0, off = -1;
+      for (int i = 0; i < 8 && off < 0; i++) {
+        int d = ((d0 - 1 + i) % 7) + 1;
+        bool weekend = (d == 1 || d == 7 || id(holiday_mode).state);
+        int ah = weekend ? id(weekend_alarm).hour : id(weekday_alarm).hour;
+        int am = weekend ? id(weekend_alarm).minute : id(weekday_alarm).minute;
+        if (i == 0 && ah * 60 + am <= nowmin) continue;
+        if (skip) { skip = false; continue; }
+        h = ah; m = am; off = i;
+      }
+      const char *tag = (off == 0) ? (id(holiday_mode).state ? "hol" : "on") : DOW[((d0 - 1 + off) % 7) + 1];
+      it.printf(0, 1, "Alarm %2d:%02d%s %-4s", (h % 12 == 0) ? 12 : h % 12, m, (h < 12) ? "a" : "p", tag);
+
+# ---------- alarm logic ----------
+script:
+  # Fired by the datetime on_time triggers. Only ring if today matches the schedule.
+  - id: alarm_due
+    parameters:
+      for_weekend: bool
+    then:
+      - if:
+          condition:
+            lambda: |-
+              int d = id(ha_time).now().day_of_week;
+              bool weekend = (d == 1 || d == 7 || id(holiday_mode).state);
+              return id(alarm_enabled).state && id(alarm_state) == 0 && weekend == for_weekend;
+          then:
+            - script.execute: alarm_fire
+
+  - id: alarm_fire
+    then:
+      - if:
+          condition:
+            switch.is_on: skip_next
+          then:
+            - switch.turn_off: skip_next
+            - logger.log: "Skip Next was on - alarm skipped"
+          else:
+            - script.execute: start_ringing
+
+  - id: start_ringing
+    mode: restart
+    then:
+      - lambda: id(alarm_state) = 1;
+      - text_sensor.template.publish: { id: alarm_state_text, state: "ringing" }
+      - switch.turn_on: backlight
+      - lambda: id(mp3).set_volume((uint8_t) id(volume).state);
+      - delay: 100ms                       # DFPlayer needs a gap between commands
+      - script.execute: play_tune
+      - script.execute: ring_timeout
+
+  # Pad 2: step to the next ringer and play 5 s of it at the set volume. Restart mode = rapid
+  # presses keep stepping and the stop timer restarts. Does nothing while the alarm is live.
+  - id: preview_track
+    mode: restart
+    then:
+      - if:
+          condition:
+            lambda: return id(alarm_state) == 0;
+          then:
+            - select.next:
+                id: alarm_tune
+                cycle: true
+            - lambda: id(track_shown_until) = millis() + 5000;
+            - lambda: id(mp3).set_volume((uint8_t) id(volume).state);
+            - delay: 100ms
+            - script.execute: play_tune
+            - delay: 5s
+            - lambda: id(mp3).stop();
+
+  # selector position N -> /01/0NN.mp3 on the microSD
+  - id: play_tune
+    then:
+      - lambda: |-
+          auto idx = id(alarm_tune).active_index();
+          int n = idx.has_value() ? (int) idx.value() + 1 : 1;
+          id(mp3).play_folder(1, n);
+
+  # Auto-stop so a slept-through alarm doesn't play all morning.
+  - id: ring_timeout
+    mode: restart
+    then:
+      - delay: !lambda return (uint32_t) (id(max_ring_minutes).state * 60000);
+      - logger.log: "Alarm timed out - auto-dismiss"
+      - script.execute: dismiss
+
+  - id: snooze
+    mode: restart
+    then:
+      - if:
+          condition:
+            lambda: return id(alarm_state) == 1;
+          then:
+            - lambda: id(mp3).stop();
+            - script.stop: ring_timeout
+            - lambda: id(alarm_state) = 2;
+            - text_sensor.template.publish: { id: alarm_state_text, state: "snoozed" }
+            - script.execute: backlight_timeout
+            - delay: !lambda return (uint32_t) (id(snooze_minutes).state * 60000);
+            - script.execute: start_ringing
+
+  - id: dismiss
+    then:
+      - script.stop: snooze
+      - script.stop: ring_timeout
+      - lambda: id(mp3).stop();
+      - lambda: id(alarm_state) = 0;
+      - text_sensor.template.publish: { id: alarm_state_text, state: "idle" }
+      - script.execute: backlight_timeout
+
+  # ---------- backlight schedule ----------
+  # Sets bl_quiet from the Lights Off / Lights On window (handles a window that crosses midnight).
+  - id: backlight_eval
+    then:
+      - lambda: |-
+          auto now = id(ha_time).now();
+          if (!now.is_valid()) { id(bl_quiet) = false; return; }
+          int cur = now.hour * 60 + now.minute;
+          int off = id(lights_off_at).hour * 60 + id(lights_off_at).minute;
+          int on  = id(lights_on_at).hour * 60 + id(lights_on_at).minute;
+          id(bl_quiet) = (off <= on) ? (cur >= off && cur < on) : (cur >= off || cur < on);
+
+  # Runs at time sync and at both window edges: enforce the schedule.
+  - id: backlight_apply
+    then:
+      - script.execute: backlight_eval
+      - if:
+          condition:
+            switch.is_on: auto_backlight
+          then:
+            - if:
+                condition:
+                  lambda: return id(bl_quiet) && id(alarm_state) != 1;
+                then:
+                  - switch.turn_off: backlight
+                else:
+                  - switch.turn_on: backlight
+
+  # Any press: light up now; the timeout script decides whether it goes dark again.
+  - id: backlight_wake
+    then:
+      - switch.turn_on: backlight
+
+  # After the timeout, go dark only if inside the window, auto is on, and nothing is ringing.
+  - id: backlight_timeout
+    mode: restart
+    then:
+      - delay: !lambda return (uint32_t) (id(backlight_timeout_s).state * 1000);
+      - script.execute: backlight_eval
+      - if:
+          condition:
+            lambda: return id(auto_backlight).state && id(bl_quiet) && id(alarm_state) != 1;
+          then:
+            - switch.turn_off: backlight
+
+  - id: boot_init
+    then:
+      - if:
+          condition:
+            switch.is_on: backlight
+          then:
+            - lambda: id(lcd).backlight();
+          else:
+            - lambda: id(lcd).no_backlight();
+      - text_sensor.template.publish: { id: alarm_state_text, state: "idle" }
+      - delay: 2s                          # DFPlayer takes ~1.5 s to read the card
+      - lambda: id(mp3).set_volume((uint8_t) id(volume).state);

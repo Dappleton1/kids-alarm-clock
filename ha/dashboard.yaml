@@ -1,0 +1,313 @@
+# Kids Alarms dashboard. Settings -> Dashboards -> Add dashboard -> New dashboard from scratch,
+# open it, pencil -> three dots -> Raw configuration editor, paste this whole file.
+# Needs HACS 'Mushroom' cards and a toggle helper named input_boolean.school_holiday.
+# Rename the two headings to your kids. Entity ids assume the clocks are named alarm-clock-1 / -2.
+views:
+- title: Kids Alarms
+  path: alarms
+  type: sections
+  max_columns: 2
+  sections:
+  - type: grid
+    column_span: 2
+    cards:
+    - type: heading
+      heading: Kids Alarms
+      heading_style: title
+      icon: mdi:alarm-multiple
+    - type: custom:mushroom-entity-card
+      entity: input_boolean.school_holiday
+      name: School holiday
+      secondary_info: none
+      icon: mdi:school-outline
+      icon_color: blue
+      tap_action:
+        action: toggle
+      grid_options:
+        columns: 6
+    - type: markdown
+      grid_options:
+        columns: 6
+      content: Holiday = both clocks use the weekend time every day. Skip next swallows one ring.
+  - type: grid
+    cards:
+    - type: heading
+      heading: Clock 1
+      heading_style: title
+      icon: mdi:bed-clock
+    - type: custom:mushroom-template-card
+      entity: sensor.alarm_clock_1_alarm_state
+      primary: '{% if is_state(''switch.alarm_clock_1_alarm_enabled'',''off'') %}Alarm off{% else %}{% set ns = namespace(found=none,
+        skip=is_state(''switch.alarm_clock_1_skip_next_alarm'',''on'')) %}{% set hol = is_state(''switch.alarm_clock_1_holiday_mode'',''on'')
+        %}{% set wd = states(''time.alarm_clock_1_weekday_alarm'') %}{% set we = states(''time.alarm_clock_1_weekend_alarm'')
+        %}{% for d in range(0,9) if ns.found is none %}{% set day = now() + timedelta(days=d) %}{% set t = we if (hol or day.weekday()
+        >= 5) else wd %}{% set c = day.replace(hour=t[0:2]|int, minute=t[3:5]|int, second=0, microsecond=0) %}{% if c > now()
+        %}{% if ns.skip %}{% set ns.skip = false %}{% else %}{% set ns.found = c %}{% endif %}{% endif %}{% endfor %}{% set
+        c = ns.found %}{% set label = ''Today'' if c.date() == now().date() else (''Tomorrow'' if c.date() == (now()+timedelta(days=1)).date()
+        else c.strftime(''%A'')) %}{{ label }} {{ c.strftime(''%-I:%M %p'') }}{% endif %}'
+      secondary: '{% set s = states(''sensor.alarm_clock_1_alarm_state'') %}{% if s == ''ringing'' %}Ringing now{% elif s
+        == ''snoozed'' %}Snoozed for {{ states(''number.alarm_clock_1_snooze_minutes'')|int }} min{% elif is_state(''switch.alarm_clock_1_alarm_enabled'',''off'')
+        %}Turn on to set a wake-up{% elif is_state(''switch.alarm_clock_1_holiday_mode'',''on'') %}Holiday: weekend time every
+        day{% else %}School days {{ states(''time.alarm_clock_1_weekday_alarm'')[0:5] }} · Weekends {{ states(''time.alarm_clock_1_weekend_alarm'')[0:5]
+        }}{% endif %}'
+      icon: '{% set s = states(''sensor.alarm_clock_1_alarm_state'') %}{% if s == ''ringing'' %}mdi:alarm-light{% elif s ==
+        ''snoozed'' %}mdi:alarm-snooze{% elif is_state(''switch.alarm_clock_1_alarm_enabled'',''off'') %}mdi:alarm-off{% else
+        %}mdi:alarm{% endif %}'
+      icon_color: '{% set s = states(''sensor.alarm_clock_1_alarm_state'') %}{% if s == ''ringing'' %}red{% elif s == ''snoozed''
+        %}orange{% elif is_state(''switch.alarm_clock_1_alarm_enabled'',''off'') %}grey{% else %}green{% endif %}'
+      fill_container: true
+      grid_options:
+        columns: 12
+    - type: custom:mushroom-chips-card
+      alignment: start
+      chips:
+      - type: template
+        entity: switch.alarm_clock_1_alarm_enabled
+        content: Alarm on
+        icon: mdi:power
+        icon_color: '{{ ''green'' if is_state(''switch.alarm_clock_1_alarm_enabled'',''on'') else ''grey'' }}'
+        tap_action:
+          action: toggle
+      - type: template
+        entity: switch.alarm_clock_1_skip_next_alarm
+        content: Skip next
+        icon: mdi:debug-step-over
+        icon_color: '{{ ''orange'' if is_state(''switch.alarm_clock_1_skip_next_alarm'',''on'') else ''grey'' }}'
+        tap_action:
+          action: toggle
+      - type: template
+        entity: switch.alarm_clock_1_holiday_mode
+        content: Holiday
+        icon: mdi:beach
+        icon_color: '{{ ''blue'' if is_state(''switch.alarm_clock_1_holiday_mode'',''on'') else ''grey'' }}'
+        tap_action:
+          action: toggle
+      grid_options:
+        columns: 12
+    - type: custom:mushroom-entity-card
+      entity: time.alarm_clock_1_weekday_alarm
+      name: School days
+      icon: mdi:school
+      grid_options:
+        columns: 6
+    - type: custom:mushroom-entity-card
+      entity: time.alarm_clock_1_weekend_alarm
+      name: Weekends
+      icon: mdi:weather-sunny
+      grid_options:
+        columns: 6
+    - type: custom:mushroom-select-card
+      entity: select.alarm_clock_1_alarm_track
+      name: Wake-up sound
+      icon: mdi:music
+      grid_options:
+        columns: 12
+    - type: custom:mushroom-number-card
+      entity: number.alarm_clock_1_volume
+      name: Volume
+      icon: mdi:volume-high
+      display_mode: slider
+      grid_options:
+        columns: 12
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.alarm_clock_1_alarm_state
+        state:
+        - ringing
+        - snoozed
+      card:
+        type: horizontal-stack
+        cards:
+        - type: custom:mushroom-template-card
+          primary: Snooze
+          icon: mdi:alarm-snooze
+          icon_color: orange
+          layout: horizontal
+          tap_action:
+            action: perform-action
+            perform_action: button.press
+            target:
+              entity_id: button.alarm_clock_1_snooze
+          grid_options:
+            columns: 4
+        - type: custom:mushroom-template-card
+          primary: Dismiss
+          icon: mdi:alarm-off
+          icon_color: red
+          layout: horizontal
+          tap_action:
+            action: perform-action
+            perform_action: button.press
+            target:
+              entity_id: button.alarm_clock_1_dismiss
+          grid_options:
+            columns: 4
+      grid_options:
+        columns: 12
+    - type: entities
+      title: Backlight
+      state_color: true
+      entities:
+      - entity: switch.alarm_clock_1_auto_backlight
+        name: Auto schedule
+      - entity: time.alarm_clock_1_lights_off_at
+        name: Lights off
+      - entity: time.alarm_clock_1_lights_on_at
+        name: Lights on
+      - entity: number.alarm_clock_1_backlight_timeout
+        name: Stay lit (s)
+      - entity: number.alarm_clock_1_snooze_minutes
+        name: Snooze length
+      - type: button
+        entity: button.alarm_clock_1_test_alarm
+        name: Test the alarm
+        action_name: Ring
+        tap_action:
+          action: perform-action
+          perform_action: button.press
+          target:
+            entity_id: button.alarm_clock_1_test_alarm
+      grid_options:
+        columns: 12
+  - type: grid
+    cards:
+    - type: heading
+      heading: Clock 2
+      heading_style: title
+      icon: mdi:bed-clock
+    - type: custom:mushroom-template-card
+      entity: sensor.alarm_clock_2_alarm_state
+      primary: '{% if is_state(''switch.alarm_clock_2_alarm_enabled'',''off'') %}Alarm off{% else %}{% set ns = namespace(found=none,
+        skip=is_state(''switch.alarm_clock_2_skip_next_alarm'',''on'')) %}{% set hol = is_state(''switch.alarm_clock_2_holiday_mode'',''on'')
+        %}{% set wd = states(''time.alarm_clock_2_weekday_alarm'') %}{% set we = states(''time.alarm_clock_2_weekend_alarm'')
+        %}{% for d in range(0,9) if ns.found is none %}{% set day = now() + timedelta(days=d) %}{% set t = we if (hol or day.weekday()
+        >= 5) else wd %}{% set c = day.replace(hour=t[0:2]|int, minute=t[3:5]|int, second=0, microsecond=0) %}{% if c > now()
+        %}{% if ns.skip %}{% set ns.skip = false %}{% else %}{% set ns.found = c %}{% endif %}{% endif %}{% endfor %}{% set
+        c = ns.found %}{% set label = ''Today'' if c.date() == now().date() else (''Tomorrow'' if c.date() == (now()+timedelta(days=1)).date()
+        else c.strftime(''%A'')) %}{{ label }} {{ c.strftime(''%-I:%M %p'') }}{% endif %}'
+      secondary: '{% set s = states(''sensor.alarm_clock_2_alarm_state'') %}{% if s == ''ringing'' %}Ringing now{% elif s
+        == ''snoozed'' %}Snoozed for {{ states(''number.alarm_clock_2_snooze_minutes'')|int }} min{% elif is_state(''switch.alarm_clock_2_alarm_enabled'',''off'')
+        %}Turn on to set a wake-up{% elif is_state(''switch.alarm_clock_2_holiday_mode'',''on'') %}Holiday: weekend time every
+        day{% else %}School days {{ states(''time.alarm_clock_2_weekday_alarm'')[0:5] }} · Weekends {{ states(''time.alarm_clock_2_weekend_alarm'')[0:5]
+        }}{% endif %}'
+      icon: '{% set s = states(''sensor.alarm_clock_2_alarm_state'') %}{% if s == ''ringing'' %}mdi:alarm-light{% elif s ==
+        ''snoozed'' %}mdi:alarm-snooze{% elif is_state(''switch.alarm_clock_2_alarm_enabled'',''off'') %}mdi:alarm-off{% else
+        %}mdi:alarm{% endif %}'
+      icon_color: '{% set s = states(''sensor.alarm_clock_2_alarm_state'') %}{% if s == ''ringing'' %}red{% elif s == ''snoozed''
+        %}orange{% elif is_state(''switch.alarm_clock_2_alarm_enabled'',''off'') %}grey{% else %}green{% endif %}'
+      fill_container: true
+      grid_options:
+        columns: 12
+    - type: custom:mushroom-chips-card
+      alignment: start
+      chips:
+      - type: template
+        entity: switch.alarm_clock_2_alarm_enabled
+        content: Alarm on
+        icon: mdi:power
+        icon_color: '{{ ''green'' if is_state(''switch.alarm_clock_2_alarm_enabled'',''on'') else ''grey'' }}'
+        tap_action:
+          action: toggle
+      - type: template
+        entity: switch.alarm_clock_2_skip_next_alarm
+        content: Skip next
+        icon: mdi:debug-step-over
+        icon_color: '{{ ''orange'' if is_state(''switch.alarm_clock_2_skip_next_alarm'',''on'') else ''grey'' }}'
+        tap_action:
+          action: toggle
+      - type: template
+        entity: switch.alarm_clock_2_holiday_mode
+        content: Holiday
+        icon: mdi:beach
+        icon_color: '{{ ''blue'' if is_state(''switch.alarm_clock_2_holiday_mode'',''on'') else ''grey'' }}'
+        tap_action:
+          action: toggle
+      grid_options:
+        columns: 12
+    - type: custom:mushroom-entity-card
+      entity: time.alarm_clock_2_weekday_alarm
+      name: School days
+      icon: mdi:school
+      grid_options:
+        columns: 6
+    - type: custom:mushroom-entity-card
+      entity: time.alarm_clock_2_weekend_alarm
+      name: Weekends
+      icon: mdi:weather-sunny
+      grid_options:
+        columns: 6
+    - type: custom:mushroom-select-card
+      entity: select.alarm_clock_2_alarm_track
+      name: Wake-up sound
+      icon: mdi:music
+      grid_options:
+        columns: 12
+    - type: custom:mushroom-number-card
+      entity: number.alarm_clock_2_volume
+      name: Volume
+      icon: mdi:volume-high
+      display_mode: slider
+      grid_options:
+        columns: 12
+    - type: conditional
+      conditions:
+      - condition: state
+        entity: sensor.alarm_clock_2_alarm_state
+        state:
+        - ringing
+        - snoozed
+      card:
+        type: horizontal-stack
+        cards:
+        - type: custom:mushroom-template-card
+          primary: Snooze
+          icon: mdi:alarm-snooze
+          icon_color: orange
+          layout: horizontal
+          tap_action:
+            action: perform-action
+            perform_action: button.press
+            target:
+              entity_id: button.alarm_clock_2_snooze
+          grid_options:
+            columns: 4
+        - type: custom:mushroom-template-card
+          primary: Dismiss
+          icon: mdi:alarm-off
+          icon_color: red
+          layout: horizontal
+          tap_action:
+            action: perform-action
+            perform_action: button.press
+            target:
+              entity_id: button.alarm_clock_2_dismiss
+          grid_options:
+            columns: 4
+      grid_options:
+        columns: 12
+    - type: entities
+      title: Backlight
+      state_color: true
+      entities:
+      - entity: switch.alarm_clock_2_auto_backlight
+        name: Auto schedule
+      - entity: time.alarm_clock_2_lights_off_at
+        name: Lights off
+      - entity: time.alarm_clock_2_lights_on_at
+        name: Lights on
+      - entity: number.alarm_clock_2_backlight_timeout
+        name: Stay lit (s)
+      - entity: number.alarm_clock_2_snooze_minutes
+        name: Snooze length
+      - type: button
+        entity: button.alarm_clock_2_test_alarm
+        name: Test the alarm
+        action_name: Ring
+        tap_action:
+          action: perform-action
+          perform_action: button.press
+          target:
+            entity_id: button.alarm_clock_2_test_alarm
+      grid_options:
+        columns: 12

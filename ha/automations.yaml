@@ -1,0 +1,60 @@
+# Optional automations. Needs a toggle helper named input_boolean.school_holiday
+# (Settings -> Devices & services -> Helpers -> Create helper -> Toggle).
+# Replace notify.mobile_app_your_phone with your own notify service.
+# Add via Settings -> Automations -> Create -> Edit in YAML, one block at a time.
+
+- id: kids_alarm_holiday_sync
+  alias: Kids Alarms - School Holiday Sync
+  description: One toggle sets Holiday Mode on both clocks (every day uses the weekend time).
+  triggers:
+    - trigger: state
+      entity_id: input_boolean.school_holiday
+  actions:
+    - action: "switch.turn_{{ trigger.to_state.state }}"
+      target:
+        entity_id:
+          - switch.alarm_clock_1_holiday_mode
+          - switch.alarm_clock_2_holiday_mode
+  mode: single
+
+- id: kids_alarm_dismissed_notify
+  alias: Kids Alarms - Dismissed
+  description: A kid pressed the big button (ringing/snoozed -> idle).
+  triggers:
+    - trigger: state
+      entity_id: sensor.alarm_clock_1_alarm_state
+      to: idle
+      from: [ringing, snoozed]
+      id: Clock 1
+    - trigger: state
+      entity_id: sensor.alarm_clock_2_alarm_state
+      to: idle
+      from: [ringing, snoozed]
+      id: Clock 2
+  actions:
+    - action: notify.mobile_app_your_phone
+      data:
+        title: "{{ trigger.id }} alarm dismissed"
+        message: "Up at {{ now().strftime('%-I:%M %p') }}"
+  mode: parallel
+
+- id: kids_alarm_slept_through
+  alias: Kids Alarms - Slept Through
+  description: Still ringing just before Max Ring Minutes (default 10) auto-dismisses it.
+  triggers:
+    - trigger: state
+      entity_id: sensor.alarm_clock_1_alarm_state
+      to: ringing
+      for: { minutes: 9, seconds: 45 }
+      id: Clock 1
+    - trigger: state
+      entity_id: sensor.alarm_clock_2_alarm_state
+      to: ringing
+      for: { minutes: 9, seconds: 45 }
+      id: Clock 2
+  actions:
+    - action: notify.mobile_app_your_phone
+      data:
+        title: "{{ trigger.id }} slept through the alarm"
+        message: "Still ringing after 10 minutes - go check."
+  mode: parallel
