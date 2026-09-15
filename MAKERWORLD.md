@@ -28,7 +28,7 @@ a 60 mm arcade button, all running ESPHome. About $30 in parts per clock.
 the LCD, the touch strip, a side microSD slot so you can change songs without opening it, and USB-C
 power out the back.
 
-**Firmware, wiring sheet, dashboard and a step-by-step build guide:** REPO_LINK
+**Firmware, wiring sheet, dashboard and a step-by-step build guide:** https://github.com/Dappleton1/kids-alarm-clock
 The wiring sheet is a printable two-page PDF-style page with a colour-coded schematic and a pin table.
 
 **Parts list** (per clock): ESP32 dev board · 16x2 LCD with I2C backpack · DFPlayer Mini · microSD ≤32 GB ·
