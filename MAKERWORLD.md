@@ -4,7 +4,7 @@ Paste into the model description. Swap the repo link once it's live.
 
 ---
 
-## Kids' Alarm Clock that parents control from Home Assistant
+## Smart Alarm Clock
 
 Our kids' alarm clocks kept going off on holidays and PD days, and the only way to stop it was a walk
 into a dark bedroom at 6:55 AM. So I built alarm clocks where every setting lives in Home Assistant.
