@@ -334,6 +334,8 @@ dfplayer:
         then:
           - delay: 300ms
           - script.execute: play_tune
+          - delay: 150ms
+          - script.execute: { id: mp3_repeat, enable: true }
 
 # passive piezo GPIO25 -> GND: short blips for pad presses only
 output:
@@ -378,7 +380,7 @@ display:
         h = ah; m = am; off = i;
       }
       const char *tag = (off == 0) ? (id(holiday_mode).state ? "hol" : "on") : DOW[((d0 - 1 + off) % 7) + 1];
-      it.printf(0, 1, "Alarm %2d:%02d%s %-4s", (h % 12 == 0) ? 12 : h % 12, m, (h < 12) ? "a" : "p", tag);
+      it.printf(0, 1, "Alarm %2d:%02d%s %-3s", (h % 12 == 0) ? 12 : h % 12, m, (h < 12) ? "a" : "p", tag);
 
 # ---------- alarm logic ----------
 script:
@@ -416,6 +418,8 @@ script:
       - lambda: id(mp3).set_volume((uint8_t) id(volume).state);
       - delay: 100ms                       # DFPlayer needs a gap between commands
       - script.execute: play_tune
+      - delay: 150ms
+      - script.execute: { id: mp3_repeat, enable: true }   # module loops the track on its own
       - script.execute: ring_timeout
 
   # Pad 2: step to the next ringer and play 5 s of it at the set volume. Restart mode = rapid
@@ -436,6 +440,21 @@ script:
             - script.execute: play_tune
             - delay: 5s
             - lambda: id(mp3).stop();
+
+  # DFPlayer command 0x19 = repeat the track that is playing (arg 0 = on, 1 = off). ESPHome doesn't
+  # expose it, so the frame is built by hand (same layout as the component's send_cmd_). The alarm
+  # used to rely on the module's 'track finished' message to replay; one missed message = silence.
+  - id: mp3_repeat
+    parameters:
+      enable: bool
+    then:
+      - lambda: |-
+          uint8_t f[10] = {0x7E, 0xFF, 0x06, 0x19, 0x01, 0x00, (uint8_t) (enable ? 0x00 : 0x01), 0x00, 0x00, 0xEF};
+          uint16_t sum = 0;
+          for (int i = 1; i < 7; i++) sum += f[i];
+          sum = -sum;
+          f[7] = sum >> 8; f[8] = (uint8_t) sum;
+          id(uart_mp3).write_array(f, 10);
 
   # selector position N -> /01/0NN.mp3 on the microSD
   - id: play_tune
@@ -460,6 +479,8 @@ script:
           condition:
             lambda: return id(alarm_state) == 1;
           then:
+            - script.execute: { id: mp3_repeat, enable: false }
+            - delay: 100ms
             - lambda: id(mp3).stop();
             - script.stop: ring_timeout
             - lambda: id(alarm_state) = 2;
@@ -472,6 +493,8 @@ script:
     then:
       - script.stop: snooze
       - script.stop: ring_timeout
+      - script.execute: { id: mp3_repeat, enable: false }
+      - delay: 100ms
       - lambda: id(mp3).stop();
       - lambda: id(alarm_state) = 0;
       - text_sensor.template.publish: { id: alarm_state_text, state: "idle" }
