@@ -1,6 +1,6 @@
 # Kids' Alarm Clock — Home Assistant edition
 
-**A bedside alarm clock for kids that parents control from their phone.** One big button to stop it, a
+**A bedside alarm clock for kids that parents control from their phone.** One button to stop it, a
 touch strip to pick the wake-up sound, and every setting lives in Home Assistant: school-day time,
 weekend time, holiday mode, skip-tomorrow, volume, the lot. Built from an ESP32, a 16x2 LCD, a
 DFPlayer MP3 module and an arcade button, in a 3D-printed case.
@@ -14,7 +14,7 @@ DFPlayer MP3 module and an arcade button, in a 3D-printed case.
 
 - **Two alarm times**: school days and weekends. **Holiday mode** makes every day a weekend.
 - **Skip next** swallows one ring and turns itself off. Set it from bed the night before a snow day.
-- **Big arcade button = stop.** No snooze on the clock. A tired six-year-old only needs one button.
+- **Arcade button = stop.** No snooze on the clock. A tired six-year-old only needs one button.
 - **Touch pads**: next wake-up sound with a 5-second preview, volume down, volume up. One pad spare.
 - **Real sounds from a microSD**: ten ringers, or full songs, encoded so the DFPlayer plays them cleanly.
 - **Runs on the clock, not the server.** Time comes from Home Assistant with an internet fallback, every
@@ -26,25 +26,29 @@ DFPlayer MP3 module and an arcade button, in a 3D-printed case.
 
 ## Parts, per clock
 
-| Part | Notes | ~Cost |
-|------|-------|------:|
-| ESP32 dev board (WROOM, 30 or 38 pin) | Any `esp32dev` board. A CP2102 USB bridge auto-resets for flashing; CH340 boards need the BOOT button held. | $5 |
-| 16x2 character LCD with PCF8574 I2C backpack | Address 0x27 or 0x3F. Needs 5 V. | $4 |
-| DFPlayer Mini (YX5200) | MP3 player with its own 3 W amp. Clones vary, buy two. | $2 |
-| microSD card, 32 GB or smaller | FAT32. | $5 |
-| 8 Ω speaker, 2 to 3 inch | Bigger sounds better. 4 Ω also works. | $3 |
-| TTP224 4-pad capacitive touch module | The "V G 1 2 3 4" board. | $2 |
-| Arcade button, 60 mm, microswitch type | The satisfying part. LED variants work, LED unused. | $4 |
-| 5 V 2 A USB power supply and cable | The ESP32 plus LCD plus WiFi browns out on a 1 A adapter. | $6 |
-| 1 kΩ resistor | On the DFPlayer RX line. Required, kills the hiss. | |
-| Passive piezo buzzer, optional | Click feedback on pad presses. | $1 |
-| Printed case | Files on MakerWorld, see `case/`. | |
+The case is cut for these exact footprints. Substitutes will fit the wiring but not the holes.
 
-Dupont wires or a small perfboard, and a soldering iron for the button and speaker.
+| Part | Exact fit | Notes | ~Cost |
+|------|-----------|-------|------:|
+| ESP32 dev board | **30-pin** ESP32 DevKit (WROOM-32), **USB-C** | The 38-pin board is too wide. A CP2102 USB bridge auto-resets for flashing; CH340 boards need the BOOT button held. | $5 |
+| 16x2 LCD | LCD1602 with **PCF8574T** I2C backpack fitted, 5 V | PCF8574T = address 0x27 (firmware default). Blue or yellow-green, your call. | $4 |
+| DFPlayer Mini | **YX5200** chip, standard DFPlayer Mini footprint | Held by one M3 bolt, so wider clones won't clamp. Clones vary, buy two. | $2 |
+| microSD card | any, 32 GB or smaller | FAT32. | $5 |
+| Speaker | **32 mm (1 inch) full-range, 8 Ω 3 W**, neodymium | Sold in pairs, one pair does two clocks. | $2 |
+| Touch strip | **TTP224** "touch four button switch module" | The "V G 1 2 3 4" board. Most clones idle HIGH; firmware default handles it. | $2 |
+| Arcade button | **Sanwa OBSF-24**, 24 mm snap-in | Hole is cut for the OBSF-24 flange. 30 mm and screw-ring buttons don't fit. Any colour. | $4 |
+| USB-C panel mount | USB-C female to male **panel-mount extension, 0.3 m** | Male end into the ESP32, flange screws into the rear opening. | $3 |
+| Power supply | any 5 V 2 A USB-C supply | The ESP32 plus LCD plus WiFi browns out on a 1 A adapter. | $6 |
+| 1 kΩ resistor | | On the DFPlayer RX line. Required, kills the hiss. | |
+| Passive piezo buzzer | optional | Click feedback on pad presses. | $1 |
+| Printed case | base + bezel from MakerWorld, see `case/` | ABS or PETG. | |
+
+Fasteners per clock: **16 × M2 × 6 mm Phillips round-head self-tapping screws** (case) and **1 × M3 × 8 mm bolt**
+(clamps the DFPlayer). Plus Dupont wires or a small perfboard, and a soldering iron for the button and speaker.
 
 ## Wiring
 
-Print `docs/wiring-sheet.html` from a browser: two pages, colour-coded schematic on one, pin table and
+Print `docs/wiring-sheet.pdf` (or open `docs/wiring-sheet.html` in a browser): two pages, colour-coded schematic on one, pin table and
 bench checks on the other. The short version:
 
 ```
@@ -88,13 +92,21 @@ and pads from the Home Assistant device page, then fit it in the case.
 
 You need Home Assistant with the **ESPHome Device Builder** add-on (or `pip install esphome` on a PC).
 
-1. Copy everything in `esphome/` into your ESPHome config folder.
-2. Copy `secrets.yaml.example` to `secrets.yaml` and fill in WiFi, an OTA password and one API key per
-   clock (`openssl rand -base64 32`, or let the ESPHome dashboard generate one).
-3. Plug the ESP32 into USB, open the dashboard, **Install** `alarm-clock-1.yaml` **Plug into this computer**.
-   The first flash is over USB. Every later update is over WiFi.
+**Easiest: the one-file firmware.** `esphome/alarm-clock-single.yaml` is the whole clock in a single file,
+no secrets file, no includes. Also attached to the MakerWorld listing as a `.txt`.
+
+1. Copy `alarm-clock-single.yaml` into your ESPHome config folder (or paste it into a new device in the dashboard).
+2. Edit the `substitutions` block at the top: WiFi, an OTA password, a timezone, and an API key
+   (`openssl rand -base64 32`, or let the ESPHome dashboard generate one).
+3. Plug the ESP32 into USB, **Install** the file **Plug into this computer**. The first flash is over USB.
+   Every later update is over WiFi.
 4. Home Assistant will discover the clock. Add it, paste its API key, put it in the kid's room.
-5. Repeat with `alarm-clock-2.yaml` for the second clock.
+5. Second clock: copy the file, change `name`, `friendly_name` and `api_key`, flash again.
+
+**Maintaining several clocks:** the packaged layout (`alarm-clock-1.yaml` + `kids_alarm_common.yaml` +
+`tracks.yaml` + `secrets.yaml`) keeps one copy of the firmware for all of them. Copy `secrets.yaml.example`
+to `secrets.yaml`, fill it in, install `alarm-clock-1.yaml`. The single file is generated from the
+packaged one by `tools/build_single.py`, so edit the packaged files and regenerate.
 
 ## Sounds and the microSD card
 
@@ -135,7 +147,8 @@ test_alarm, snooze, dismiss · `binary_sensor` dismiss_button, pad_1 … pad_4.
 | `esphome/kids_alarm_common.yaml` | All the logic, shared by both clocks |
 | `esphome/alarm-clock-1.yaml`, `-2.yaml` | Per-clock name and API key |
 | `esphome/tracks.yaml` | The sound names in card order |
-| `esphome/secrets.yaml.example` | What your secrets file needs |
+| `esphome/alarm-clock-single.yaml` | The whole clock in one file, easiest way to flash |
+| `esphome/secrets.yaml.example` | What your secrets file needs (packaged layout only) |
 | `ha/dashboard.yaml`, `ha/automations.yaml` | Home Assistant side |
 | `docs/wiring-sheet.html` | Printable wiring sheet |
 | `docs/assembly.md` | Build walkthrough |

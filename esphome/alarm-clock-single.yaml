@@ -1,11 +1,23 @@
-# Kids alarm clock - shared package. Per-device files set substitutions + api key.
-# Hardware: ESP32 WROOM, 16x2 LCD on PCF8574 I2C backpack, arcade button for dismiss,
-# TTP224 touch module (pad 1 spare / pad 2 next ringer + 5 s preview / pads 3-4 vol- / vol+), DFPlayer Mini (YX5200) on UART2
-# driving an 8 ohm speaker, passive piezo on GPIO25 for pad blips.
-# Alarm logic runs ON the device; HA only sets times/switches and syncs the clock.
-# microSD layout: /01/001.mp3 ... /01/010.mp3  (folder 01, three-digit file names)
+# Kids Alarm Clock - ONE-FILE VERSION. Edit the "substitutions" block, then: esphome run alarm-clock-single.yaml
+# Building a second clock: copy this file, change name / friendly_name / api_key.
+# Source, wiring sheet, parts list, dashboard: https://github.com/Dappleton1/kids-alarm-clock
+#
+# GENERATED from kids_alarm_common.yaml + tracks.yaml by tools/build_single.py. Edit below the line only if
+# you are not going to regenerate.
 
 substitutions:
+  # ---- Your settings -------------------------------------------------------------------------
+  name: alarm-clock-1                  # lowercase, digits and dashes only. Becomes the hostname.
+  friendly_name: Alarm Clock 1         # what Home Assistant shows
+  wifi_ssid: "your-wifi"
+  wifi_password: "your-wifi-password"
+  ota_password: "pick-a-password"      # protects over-the-air updates
+  ap_fallback_password: "pick-a-password"  # the clock's own hotspot if it can't find your WiFi
+  # 32 random bytes as base64. Generate with `openssl rand -base64 32`, or in the ESPHome dashboard
+  # (Secrets -> Generate). Home Assistant asks for this when it discovers the clock.
+  api_key: "PASTE-A-BASE64-KEY-HERE"
+  timezone: America/Edmonton           # https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+  # ---- Hardware (leave alone for the parts in the BOM) ---------------------------------------
   # Dismiss = arcade button (big target for a half-asleep kid): microswitch COM -> GND,
   # NO -> GPIO32, internal pull-up. To use TTP224 pad 1 instead, change here:
   #   arcade_mode: INPUT   arcade_inverted: "false"
@@ -16,6 +28,10 @@ substitutions:
   # Plain mechanical buttons to GND: btn_mode: INPUT_PULLUP  btn_inverted: "true" (34/35 need external 10k).
   btn_mode: INPUT
   btn_inverted: "true"
+
+api:
+  encryption:
+    key: ${api_key}
 
 esphome:
   name: ${name}
@@ -37,28 +53,28 @@ logger:
 
 ota:
   - platform: esphome
-    password: !secret ota_password
+    password: ${ota_password}
 
 wifi:
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
+  ssid: ${wifi_ssid}
+  password: ${wifi_password}
   min_auth_mode: WPA2
   fast_connect: true
   ap:
     ssid: "${friendly_name} Fallback"
-    password: !secret ap_fallback_password
+    password: ${ap_fallback_password}
 
 captive_portal:
 
 time:
   - platform: homeassistant
     id: ha_time
-    timezone: America/Edmonton
+    timezone: ${timezone}
     on_time_sync:
       - script.execute: backlight_apply
   - platform: sntp
     id: sntp_time
-    timezone: America/Edmonton
+    timezone: ${timezone}
 
 i2c:
   sda: GPIO21
@@ -557,3 +573,24 @@ script:
       - text_sensor.template.publish: { id: alarm_state_text, state: "idle" }
       - delay: 2s                          # DFPlayer takes ~1.5 s to read the card
       - lambda: id(mp3).set_volume((uint8_t) id(volume).state);
+
+select:
+  - platform: template
+    id: alarm_tune
+    name: "Alarm Track"
+    icon: mdi:music
+    optimistic: true
+    restore_value: true
+    initial_option: "Rooster"
+    # position N plays /01/0NN.mp3 - keep this order in sync with TRACKS.md on the card
+    options:
+      - "Rooster"
+      - "Clock Alarm"
+      - "Birds"
+      - "Classic Alarm"
+      - "Digital Buzzer"
+      - "Farm Animals"
+      - "Morning Joy"
+      - "Chiptune"
+      - "Soft Plucks"
+      - "Be Happy"

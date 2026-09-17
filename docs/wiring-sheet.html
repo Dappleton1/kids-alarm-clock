@@ -103,10 +103,10 @@
   .page-break { break-after: page; }
 
   @media print {
-    @page { size: letter; margin: 0.45in; }
+    @page { size: letter; margin: 0.4in; }
     body { background: #fff; }
     .toolbar { display: none; }
-    .sheet { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; }
+    .sheet { width: auto; min-height: 0; margin: 0; padding: 0; box-shadow: none; zoom: 0.78; }
   }
 </style>
 
@@ -118,7 +118,7 @@
       <h1>Kids Alarm Clock Wiring</h1>
       <p class="sub">ESP32 · 16x2 LCD (PCF8574) · arcade dismiss button · TTP224 touch pads · DFPlayer Mini MP3 · 5 V USB</p>
     </div>
-    <div class="meta">Build per clock ×2<br>Rev 6 · 2026-09-14 · arcade = stop, pad 2 = next sound, pad 1 spare<br>kids-alarm-clock / docs</div>
+    <div class="meta">Build per clock ×2<br>Rev 7 · 2026-09-17 · arcade = stop, pad 2 = next sound, pad 1 spare<br>kids-alarm-clock / docs</div>
   </header>
 
   <figure>
@@ -322,7 +322,7 @@
       <h1>Pins, parts, bench checks</h1>
       <p class="sub">Companion page to the wiring schematic</p>
     </div>
-    <div class="meta">Rev 6 · 2026-09-14<br>kids-alarm-clock / docs</div>
+    <div class="meta">Rev 7 · 2026-09-17<br>kids-alarm-clock / docs</div>
   </header>
 
   <div>
@@ -353,13 +353,13 @@
     <div>
       <h2>Parts per clock</h2>
       <ul class="check">
-        <li><span><b>ESP32 WROOM dev board</b> + micro-USB data cable</span></li>
+        <li><span><b>ESP32 WROOM dev board</b>, 30 pin, USB-C + data cable</span></li>
         <li><span><b>16x2 LCD</b> with PCF8574 I2C backpack</span></li>
-        <li><span><b>Arcade button</b>, microswitch type (COM / NO / NC)</span></li>
+        <li><span><b>Arcade button</b>, Sanwa OBSF-24 (microswitch COM / NO / NC)</span></li>
         <li><span><b>TTP224</b> 4-pad touch module (all four pads wired, pad 1 spare)</span></li>
         <li><span><b>DFPlayer Mini</b>, YX5200 chip</span></li>
         <li><span><b>microSD card</b>, 32 GB or less, FAT32, folder <span class="mono">01</span> with <span class="mono">001.mp3</span>–<span class="mono">010.mp3</span> (Track 1–10 in HA)</span></li>
-        <li><span><b>8 Ω speaker</b>, small</span></li>
+        <li><span><b>Speaker</b>, 32 mm full-range, 8 Ω 3 W</span></li>
         <li><span><b>1 kΩ resistor</b> for the RX line</span></li>
         <li><span><b>Passive piezo</b> (optional)</span></li>
         <li><span><b>5 V USB wall adapter</b>, 2 A</span></li>
@@ -369,7 +369,7 @@
     <div>
       <h2>Bench checks with bench.yaml</h2>
       <ul class="check">
-        <li><span><b>Power up</b> from OMEN USB. LCD backlight on, ESP LED on, DFPlayer LED off until it plays.</span></li>
+        <li><span><b>Power up</b> from a USB port. LCD backlight on, ESP LED on, DFPlayer LED off until it plays.</span></li>
         <li><span><b>I2C scan</b> in the log shows the backpack. If it says <span class="mono">0x3F</span>, change <span class="mono">address</span> in both YAMLs.</span></li>
         <li><span><b>LCD</b> prints "Bench OK" and a counting uptime. Blank boxes only: turn the contrast pot on the backpack.</span></li>
         <li><span><b>Arcade button</b> plays <span class="mono">/01/001.mp3</span>; the player's blue LED lights while playing. <b>Pad 2</b> stops it.</span></li>
