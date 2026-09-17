@@ -51,7 +51,8 @@ Each of these is visible on the clock's device page in Home Assistant once it's 
 2. Mount the LCD in the front bezel, the touch strip below it, the arcade button on top.
 3. The DFPlayer and ESP sit on the base. Keep the DFPlayer's speaker leads short and away from the
    touch module's inputs.
-4. microSD slot faces the side opening so you can change songs without opening the case.
+4. Clamp the DFPlayer with the M3x8 bolt so its microSD slot lines up with the opening in the top,
+   so you can change songs without opening the case.
 5. USB power out the back. Close it up.
 
 ## 5. Home Assistant

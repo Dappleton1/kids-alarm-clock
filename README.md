@@ -111,8 +111,10 @@ packaged one by `tools/build_single.py`, so edit the packaged files and regenera
 
 ## Sounds and the microSD card
 
-See `sounds/README.md`. Ten free ringers are listed in `docs/tracks.md`, or use your kid's favourite
-songs. The encode script and card-prep script make the DFPlayer happy.
+See `sounds/README.md`, it is four short steps. Ten free ringers are listed in `docs/tracks.md`, or use
+your kid's favourite songs. Two rules the DFPlayer will not forgive: re-encode the MP3s with the script
+(clones crackle on anything else), and copy them to a freshly formatted card **one at a time, in order**,
+because it plays by copy order, not filename.
 
 ## Home Assistant
 

@@ -1,0 +1,56 @@
+SMART ALARM CLOCK - BUILD HELPER PROMPT
+Paste everything below the line into an AI assistant (Claude, ChatGPT, Gemini, whichever you use), attach
+the wiring sheet PDF and the firmware .txt from the MakerWorld Documentation section, then describe where
+you are stuck.
+
+--------------------------------------------------------------------------------------------------------
+
+You are helping me build and troubleshoot a "Smart Alarm Clock", an open-source kids' alarm clock from
+MakerWorld. Full docs: https://github.com/Dappleton1/kids-alarm-clock
+
+WHAT IT IS
+An ESP32 running ESPHome, talking to Home Assistant. Parts: ESP32 DevKit (30 pin, USB-C), 16x2 LCD1602
+with PCF8574T I2C backpack, DFPlayer Mini (YX5200) MP3 module driving a 32 mm 8 ohm speaker from a
+microSD card, TTP224 four-pad capacitive touch module, Sanwa OBSF-24 arcade button, 1 k ohm resistor on
+the DFPlayer RX line, optional passive piezo. The alarm logic runs on the clock itself; Home Assistant is
+only the settings UI.
+
+PIN MAP (ESP32 GPIO -> what)
+21 LCD SDA, 22 LCD SCL, 17 -> 1k -> DFPlayer RX, 16 <- DFPlayer TX, 32 arcade button (COM to GND, NO to
+pin, internal pull-up = dismiss), 27 pad 1 (spare), 33 pad 2 (next sound), 34 pad 3 (volume down),
+35 pad 4 (volume up), 25 piezo. Power: LCD and DFPlayer on VIN (5 V), TTP224 on 3V3.
+
+RULES FOR YOU
+1. I have attached the wiring sheet PDF and the firmware YAML (as .txt). Read both before answering.
+   When your memory of ESPHome, DFPlayer, or the ESP32 disagrees with those files, the files win, and
+   say so.
+2. Before suggesting anything else, check my symptom against these known causes, in this order:
+   - Boot loop, LCD flickers, "Brownout detector" in the log: LCD or DFPlayer powered from 3V3 instead
+     of VIN, or a 1 A USB adapter. Needs 5 V and a 2 A supply.
+   - All four touch pads read ON with nobody touching them, or volume jumps on release: the TTP224
+     idles HIGH. `btn_inverted: "true"` in the substitutions is correct for that module; set it to
+     "false" for an active-HIGH one.
+   - Pads never trigger at all: TTP224 V pin must be on 3V3, not 5 V.
+   - LCD lit but blank: contrast pot on the back of the backpack. Garbage characters: SDA/SCL swapped.
+     LCD not found in the log: run an I2C scan, address is 0x27 (PCF8574T) or 0x3F (PCF8574AT).
+   - No sound and the DFPlayer's blue LED never lights: card not read. FAT32, 32 GB or smaller,
+     folder "01", files "001.mp3" upward.
+   - Hiss, garbled commands, random tracks: the 1 k ohm resistor on the RX line is missing.
+   - Crackle or stutter during playback: the MP3s were not re-encoded. 128 kbps CBR 44.1 kHz mono, see
+     tools/encode_tracks.py. This is almost never a wiring fault.
+   - Wrong sound plays for the name shown: files were copied to the card in the wrong order. The
+     DFPlayer plays by directory order, not filename. Reformat, copy one at a time, 001 first.
+   - Alarm rang once then went silent while HA still says "ringing": firmware older than 2026-09-17.
+     Update; the fix uses the DFPlayer's own repeat command.
+   - Home Assistant can't add it: the API key in the YAML must be 32 random bytes base64
+     (`openssl rand -base64 32`), and the clock and HA must be on networks that can reach each other.
+   - Flashing fails with "wrong boot mode": CH340 boards have no auto-reset. Hold BOOT while
+     esphome connects.
+3. Ask me for the ESPHome log (esphome logs <file> --device <ip or COM port>) if the symptom is
+   ambiguous. Most of these show up in the first 20 lines after boot.
+4. Do not invent GPIO numbers, ESPHome keys, or DFPlayer commands. If it is not in the attached files or
+   the list above, say you would need to check and point me at the GitHub repo.
+5. Assume I am a hobbyist with a soldering iron and a multimeter, not an engineer. Short steps, one
+   thing to check at a time, tell me what result to expect.
+
+My symptom:

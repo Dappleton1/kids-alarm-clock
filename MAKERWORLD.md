@@ -29,8 +29,9 @@ the LCD, the touch strip, a microSD slot in the top so you can change songs with
 power out the back.
 
 **Firmware, wiring sheet, dashboard and a step-by-step build guide:** https://github.com/Dappleton1/kids-alarm-clock
-The firmware is one ESPHome file (attached here as .txt, rename to .yaml): fill in WiFi and a key at the top, flash, done.
-The wiring sheet is a two-page PDF (docs/wiring-sheet.pdf) with a colour-coded schematic and a pin table.
+The firmware is one ESPHome file, in the Documentation section as .txt (rename to .yaml): fill in WiFi and a key at the top, flash, done.
+The wiring sheet is the two-page PDF in Documentation, colour-coded schematic and a pin table. Also there: BUILD-HELPER-PROMPT.txt,
+paste it into any AI assistant with those two files attached and it will troubleshoot your build against the real docs.
 
 **Parts list** (per clock, about $30). The case is cut for these exact parts, substitutes won't fit the holes:
 - ESP32 DevKit, **30 pin**, **USB-C** (38-pin boards are too wide)

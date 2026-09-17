@@ -17,3 +17,10 @@ The "Alarm Track" selector in Home Assistant lists them by name; position N play
 | 010.mp3 | Be Happy | Be Happy (Wake Up Now), song | Pixabay #130700, AlexGrohl |
 
 Short clips loop on the clock until snoozed or dismissed.
+
+**Finding them:** on mixkit.co search the sound title under Free Sound Effects; the number is the ID at the
+end of the download filename (for example `mixkit-rooster-crowing-in-the-morning-2462.wav`). On pixabay.com
+search the title under Sound Effects; the number is at the end of the page URL. Mixkit gives WAV, which is
+fine, `tools/encode_tracks.py` converts it.
+
+**Copy order matters more than filenames.** See `sounds/README.md` step 3 before touching the card.
