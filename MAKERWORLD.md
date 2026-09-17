@@ -43,6 +43,7 @@ The wiring sheet is a two-page PDF (docs/wiring-sheet.pdf) with a colour-coded s
 - **USB-C female to male panel-mount extension, 0.3 m**
 - 5 V 2 A USB-C power supply
 - 1 kΩ resistor, optional passive piezo
+- 4 × 12 mm self-adhesive rubber feet
 - Fasteners: **16 × M2 × 6 mm** Phillips round-head self-tapping screws, **1 × M3 × 8 mm** bolt for the DFPlayer
 
 **Gotchas covered in the guide:** LCD must be on 5 V or the ESP brownouts, the 1 kΩ on the DFPlayer RX

@@ -20,3 +20,4 @@ The openings are cut for specific boards. See the parts table in the top-level R
 
 - 16 × M2 × 6 mm Phillips round-head self-tapping screws (case)
 - 1 × M3 × 8 mm bolt, clamps the DFPlayer Mini snug in its pocket
+- 4 × 12 mm self-adhesive rubber feet under the base

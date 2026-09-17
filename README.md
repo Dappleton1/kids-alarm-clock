@@ -41,6 +41,7 @@ The case is cut for these exact footprints. Substitutes will fit the wiring but 
 | Power supply | any 5 V 2 A USB-C supply | The ESP32 plus LCD plus WiFi browns out on a 1 A adapter. | $6 |
 | 1 kΩ resistor | | On the DFPlayer RX line. Required, kills the hiss. | |
 | Passive piezo buzzer | optional | Click feedback on pad presses. | $1 |
+| Rubber feet | 4 × 12 mm self-adhesive | Under the base. | $1 |
 | Printed case | base + bezel from MakerWorld, see `case/` | ABS or PETG. | |
 
 Fasteners per clock: **16 × M2 × 6 mm Phillips round-head self-tapping screws** (case) and **1 × M3 × 8 mm bolt**
